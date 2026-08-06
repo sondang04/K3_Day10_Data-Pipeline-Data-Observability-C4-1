@@ -1,11 +1,11 @@
 {
   "data": {
     "asset": {
-      "id": "c7c9c4f7-e1ae-4c10-8ecf-16cdfb8a9ea1",
+      "id": "3781cbcd-d4cd-435a-8e5f-6b78978b5dbb",
       "name": "repaired-quality"
     },
     "batch_definition": {
-      "id": "d1d827ba-b55f-49ef-9372-80f6e0cda15e",
+      "id": "01903be6-8a3e-49db-a43c-8edac8e93fae",
       "name": "batch"
     },
     "datasource": {

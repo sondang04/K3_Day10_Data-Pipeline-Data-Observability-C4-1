@@ -4,7 +4,7 @@
     "retrieval_hit_rate": 1.0,
     "mean_token_f1": 0.8338571428571429,
     "judge_accuracy": 0.92,
-    "mean_judge_score": 4.12,
+    "mean_judge_score": 4.64,
     "ragas": {
       "skipped": "Set RUN_RAGAS=1 to enable the slower Ragas pass."
     }
@@ -12,9 +12,9 @@
   "corrupted_metrics": {
     "samples": 25,
     "retrieval_hit_rate": 0.8,
-    "mean_token_f1": 0.6993174603174603,
-    "judge_accuracy": 0.72,
-    "mean_judge_score": 3.48,
+    "mean_token_f1": 0.6389896696267159,
+    "judge_accuracy": 0.64,
+    "mean_judge_score": 3.88,
     "ragas": {
       "skipped": "Set RUN_RAGAS=1 to enable the slower Ragas pass."
     }
@@ -22,9 +22,9 @@
   "repaired_metrics": {
     "samples": 25,
     "retrieval_hit_rate": 1.0,
-    "mean_token_f1": 0.8258571428571428,
-    "judge_accuracy": 0.92,
-    "mean_judge_score": 4.12,
+    "mean_token_f1": 0.8338571428571429,
+    "judge_accuracy": 0.88,
+    "mean_judge_score": 4.64,
     "ragas": {
       "skipped": "Set RUN_RAGAS=1 to enable the slower Ragas pass."
     }
@@ -39,23 +39,23 @@
     },
     "mean_token_f1": {
       "baseline": 0.8338571428571429,
-      "corrupted": 0.6993174603174603,
-      "repaired": 0.8258571428571428,
-      "corrupted_delta": -0.13453968253968251,
-      "repaired_delta": -0.008000000000000007
+      "corrupted": 0.6389896696267159,
+      "repaired": 0.8338571428571429,
+      "corrupted_delta": -0.19486747323042697,
+      "repaired_delta": 0.0
     },
     "judge_accuracy": {
       "baseline": 0.92,
-      "corrupted": 0.72,
-      "repaired": 0.92,
-      "corrupted_delta": -0.20000000000000007,
-      "repaired_delta": 0.0
+      "corrupted": 0.64,
+      "repaired": 0.88,
+      "corrupted_delta": -0.28,
+      "repaired_delta": -0.040000000000000036
     },
     "mean_judge_score": {
-      "baseline": 4.12,
-      "corrupted": 3.48,
-      "repaired": 4.12,
-      "corrupted_delta": -0.6400000000000001,
+      "baseline": 4.64,
+      "corrupted": 3.88,
+      "repaired": 4.64,
+      "corrupted_delta": -0.7599999999999998,
       "repaired_delta": 0.0
     }
   },

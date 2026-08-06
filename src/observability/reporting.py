@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
-from core.utils import now_utc, write_text
+from core.utils import now_utc, read_json, write_text
 
 METRIC_LABELS = {
     "samples": "Evaluation samples",
@@ -201,13 +202,110 @@ def generate_corruption_report(
     baseline_metrics: dict[str, Any],
     corrupted_metrics: dict[str, Any],
     repaired_metrics: dict[str, Any],
-    corrupted_quality: dict[str, Any],
-    repaired_quality: dict[str, Any],
-    corrupted_freshness: dict[str, Any],
-    repaired_freshness: dict[str, Any],
+    comparison: dict[str, Any],
+    corruption_log_path=None,
 ) -> None:
-    """TODO(student): viet markdown report so sanh baseline/corrupted/repaired."""
-    raise NotImplementedError("Student task: implement corruption comparison report.")
+    """Write markdown report comparing baseline/corrupted/repaired."""
+    lines = [
+        "# Corruption Flow - Comparison Report",
+        "",
+        f"Generated at: {now_utc().isoformat()}",
+        "",
+        "This report compares three pipeline states to demonstrate the impact of data corruption",
+        "on RAG agent quality and the effectiveness of recovery from raw source data.",
+        "",
+        "## 1. Comparison Summary",
+        "",
+        "| Metric | Baseline | Corrupted | Repaired | Corrupted Δ | Repaired Δ |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+
+    for metric_name in ["retrieval_hit_rate", "mean_token_f1", "judge_accuracy", "mean_judge_score"]:
+        delta = comparison.get("delta", {}).get(metric_name, {})
+        corrupted_delta = delta.get("corrupted_delta", 0)
+        repaired_delta = delta.get("repaired_delta", 0)
+        lines.append(
+            f"| {metric_name} | {_format_value(delta.get('baseline'))} | {_format_value(delta.get('corrupted'))} | "
+            f"{_format_value(delta.get('repaired'))} | {corrupted_delta:+.3f} | {repaired_delta:+.3f} |"
+        )
+
+    record_counts = comparison.get("record_counts", {})
+    quality_status = comparison.get("quality_status", {})
+    freshness_status = comparison.get("freshness_status", {})
+    lines.extend(
+        [
+            "",
+            "## 2. Record Counts",
+            "",
+            f"- Baseline records: {record_counts.get('baseline', 'N/A')}",
+            f"- Corrupted records: {record_counts.get('corrupted', 'N/A')}",
+            f"- Repaired records: {record_counts.get('repaired', 'N/A')}",
+            "",
+            "## 3. Quality Status",
+            "",
+            f"- Baseline: {str(quality_status.get('baseline', 'N/A')).upper()}",
+            f"- Corrupted: {str(quality_status.get('corrupted', 'N/A')).upper()}",
+            f"- Repaired: {str(quality_status.get('repaired', 'N/A')).upper()}",
+            "",
+            "## 4. Freshness Status",
+            "",
+            f"- Baseline: {str(freshness_status.get('baseline', 'N/A')).upper()}",
+            f"- Corrupted: {str(freshness_status.get('corrupted', 'N/A')).upper()}",
+            f"- Repaired: {str(freshness_status.get('repaired', 'N/A')).upper()}",
+            "",
+            "## 5. Corruption Applied",
+            "",
+        ]
+    )
+
+    if corruption_log_path is not None and Path(corruption_log_path).exists():
+        log = read_json(Path(corruption_log_path))
+        lines.append(f"- Initial records: {log.get('initial_count', 'N/A')}")
+        lines.append(f"- Final records: {log.get('final_count', 'N/A')}")
+        lines.append(f"- Corruption types applied: {', '.join(log.get('corruption_types', []))}")
+        lines.append("")
+        for entry in log.get("corruption_log", []):
+            lines.append(
+                f"  - {entry.get('description', entry.get('type', 'unknown'))}: {entry.get('count', 0)} records"
+            )
+    else:
+        lines.append("_Corruption log not available_")
+
+    lines.extend(["", "## 6. Key Findings", ""])
+
+    hit_rate_delta = comparison.get("delta", {}).get("retrieval_hit_rate", {}).get("corrupted_delta", 0)
+    if hit_rate_delta < -0.1:
+        lines.append("- **Retrieval performance degraded** after corruption, demonstrating data quality impact.")
+    elif hit_rate_delta > 0.1:
+        lines.append("- **Retrieval performance improved** unexpectedly (possible lucky corruption).")
+    else:
+        lines.append("- Retrieval performance relatively stable despite corruption.")
+
+    repair_delta = comparison.get("delta", {}).get("retrieval_hit_rate", {}).get("repaired_delta", 0)
+    if abs(repair_delta) < 0.05:
+        lines.append("- **Recovery successful**: Repaired metrics approximately match baseline.")
+    elif repair_delta > hit_rate_delta:
+        lines.append("- **Partial recovery**: Repaired metrics closer to baseline than corrupted state.")
+    else:
+        lines.append("- Recovery did not fully restore baseline performance.")
+
+    lines.extend(
+        [
+            "",
+            "## 7. Reproduce",
+            "",
+            "```bash",
+            "# First run baseline",
+            "uv run python script/run_phase1.py",
+            "",
+            "# Then run corruption flow",
+            "uv run python script/run_corruption_flow.py",
+            "```",
+            "",
+        ]
+    )
+
+    write_text(report_path, "\n".join(lines))
 
 
 def generate_role4_cp2_report(

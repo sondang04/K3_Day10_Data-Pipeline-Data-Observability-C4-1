@@ -1,11 +1,11 @@
 {
   "data": {
     "asset": {
-      "id": "e5732b17-dca0-43b0-94f8-2092116e853e",
+      "id": "883e003a-5815-4586-a159-53ffdb3eb118",
       "name": "baseline-quality"
     },
     "batch_definition": {
-      "id": "b3518147-87ac-4f21-b13e-ef69d2abcb5c",
+      "id": "0e302821-4486-4f59-bfc2-ccdeb5783826",
       "name": "batch"
     },
     "datasource": {

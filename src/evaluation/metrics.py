@@ -18,6 +18,11 @@ from retrieval.llm import build_llm
 from retrieval.qa import answer_question
 
 
+RAGAS_TIMEOUT_SECONDS = 600
+RAGAS_MAX_WORKERS = 8
+RAGAS_METRIC_NAMES = ("answer_relevancy", "context_precision", "context_recall", "faithfulness")
+
+
 class JudgeVerdict(BaseModel):
     score: int = Field(ge=1, le=5)
     correct: bool
@@ -80,6 +85,7 @@ def _run_ragas(settings: Settings, answers: list[dict[str, Any]]) -> dict[str, A
             sys.modules["langchain_community.chat_models.vertexai"] = shim
         from ragas import evaluate
         from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
+        from ragas.run_config import RunConfig
 
         dataset = Dataset.from_dict(
             {
@@ -94,8 +100,19 @@ def _run_ragas(settings: Settings, answers: list[dict[str, Any]]) -> dict[str, A
             metrics=[answer_relevancy, context_precision, context_recall, faithfulness],
             llm=build_llm(settings=settings, temperature=0.0),
             embeddings=MiniLMEmbeddings(settings.embedding_model),
+            # Hosted providers are slower than the 180s default allows once contexts get long.
+            run_config=RunConfig(timeout=RAGAS_TIMEOUT_SECONDS, max_workers=RAGAS_MAX_WORKERS),
         )
-        return dict(result)
+        # Ragas >=0.2 returns an EvaluationResult, not a mapping: aggregate the per-row frame.
+        scores = result.to_pandas()
+        summary: dict[str, Any] = {"samples_scored": int(len(scores))}
+        for metric_name in RAGAS_METRIC_NAMES:
+            if metric_name not in scores.columns:
+                continue
+            value = scores[metric_name].mean()
+            summary[metric_name] = None if value != value else round(float(value), 4)
+            summary[f"{metric_name}_rows"] = int(scores[metric_name].notna().sum())
+        return summary
     except Exception as exc:  # pragma: no cover
         return {"error": f"Ragas evaluation failed: {exc}"}
 

@@ -1,11 +1,11 @@
 {
   "data": {
     "asset": {
-      "id": "4754caab-e272-46e7-aaa4-adc843beff83",
+      "id": "a18fdda0-7c2f-4f9a-8664-d860218c5b65",
       "name": "corrupted-quality"
     },
     "batch_definition": {
-      "id": "e73346a5-1366-4eb6-8940-912e9b08f1a7",
+      "id": "4d98af7f-7cc6-4dc3-947b-f159d75fd8b2",
       "name": "batch"
     },
     "datasource": {

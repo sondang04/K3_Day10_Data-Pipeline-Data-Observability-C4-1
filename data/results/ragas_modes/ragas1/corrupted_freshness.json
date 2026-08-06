@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-08-06T04:58:29.251453+00:00",
+  "threshold_days": 180,
+  "total_rows": 21,
+  "stale_rows": 3,
+  "fresh_rows": 18,
+  "invalid_published_rows": 0,
+  "invalid_age_days_rows": 0,
+  "age_mismatch_rows": 0,
+  "latest_published": "2026-08-01",
+  "oldest_published": "2001-01-01",
+  "days_since_latest_publication": 5,
+  "max_age_days": 9348,
+  "mean_age_days": 1267.71,
+  "source_timestamp_column": "updated",
+  "latest_ingested_at": "2026-08-05T00:00:00+00:00",
+  "source_lag_hours": 28.97,
+  "is_fresh": false,
+  "notes": "Fresh means published/age_days are valid, consistent within 1 day, and no row is older than 180 days."
+}

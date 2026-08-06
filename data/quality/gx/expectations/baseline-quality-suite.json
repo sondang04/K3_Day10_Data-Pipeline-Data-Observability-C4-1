@@ -1,7 +1,7 @@
 {
   "expectations": [
     {
-      "id": "f53ac9b9-1614-43ed-bbf1-a9f78c9bc2a0",
+      "id": "41c185f3-8c6b-4ab1-91bc-cc42baef197a",
       "kwargs": {
         "min_value": 10
       },
@@ -10,7 +10,7 @@
       "type": "expect_table_row_count_to_be_between"
     },
     {
-      "id": "e684d997-276f-4f8e-bd6c-7707cac3188c",
+      "id": "dfa142c6-4926-47a0-a81b-b6d9ad8648d9",
       "kwargs": {
         "column": "paper_id"
       },
@@ -19,7 +19,7 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "78cf5306-710b-4c45-a285-0ea1ec32c412",
+      "id": "7fd87ed1-75d9-4455-97d1-71742224fdc5",
       "kwargs": {
         "column": "paper_id"
       },
@@ -28,7 +28,7 @@
       "type": "expect_column_values_to_be_unique"
     },
     {
-      "id": "2c367e0d-fd82-40af-8aca-75c573ad5de0",
+      "id": "6d946e89-b1e5-4cdd-b66d-6056964ecaf0",
       "kwargs": {
         "column": "title"
       },
@@ -37,7 +37,7 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "7c4dc580-b36f-47d8-b806-de1745c29846",
+      "id": "7d1bf572-9588-4da9-a076-6b52750e4755",
       "kwargs": {
         "column": "title",
         "min_value": 5
@@ -47,7 +47,7 @@
       "type": "expect_column_value_lengths_to_be_between"
     },
     {
-      "id": "73365814-0f28-468e-8a3c-c59bf07560cb",
+      "id": "6f279704-2a1d-429e-b6c6-b2917b533a0f",
       "kwargs": {
         "column": "summary"
       },
@@ -56,7 +56,7 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "2755dee6-eca2-4e52-8ef3-651fb19426fe",
+      "id": "d17dd0dd-3a29-4333-b957-9ac1e68ab8a3",
       "kwargs": {
         "column": "summary",
         "min_value": 50
@@ -66,7 +66,7 @@
       "type": "expect_column_value_lengths_to_be_between"
     },
     {
-      "id": "1cc73c43-b6ac-41e1-88b7-6c2d5a13c4b5",
+      "id": "7d06c494-45d8-4fd6-b29c-842629f703ad",
       "kwargs": {
         "column": "text_for_embedding"
       },
@@ -75,7 +75,7 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "fe96c113-40e9-4ca9-80df-bfbfd2408282",
+      "id": "9a33407a-267e-4379-9bbc-2ed9b75de71d",
       "kwargs": {
         "column": "published",
         "regex": "^\\d{4}-\\d{2}-\\d{2}$"
@@ -85,7 +85,7 @@
       "type": "expect_column_values_to_match_regex"
     },
     {
-      "id": "ec3493f5-a5ef-49c8-b01d-7b96bb3e0f20",
+      "id": "8bb5c0b9-6f57-477a-86a0-38bb77806013",
       "kwargs": {
         "column": "age_days",
         "max_value": 180.0,
@@ -98,7 +98,7 @@
   ],
   "id": "7b694b61-4edc-41e0-b07a-6b2ce967c8e0",
   "meta": {
-    "great_expectations_version": "1.18.0"
+    "great_expectations_version": "1.19.1"
   },
   "name": "baseline-quality-suite",
   "notes": null
