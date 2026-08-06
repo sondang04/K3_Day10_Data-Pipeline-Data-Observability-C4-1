@@ -87,11 +87,11 @@ fluent_datasources:
     assets:
       baseline-quality:
         type: dataframe
-        id: 488d2253-7ad0-45cd-938d-4e3537df71a7
+        id: d72199c0-e71b-4fbc-8a07-4dabdd52a9d0
         batch_metadata: {}
         batch_definitions:
           batch:
-            id: f516fe8e-24e2-4a41-a7bb-2807910ad848
+            id: ec420551-545c-4358-8a1f-368f5a6fac5c
             partitioner:
 analytics_enabled:
 data_context_id: 63291724-1da1-438e-937c-1d53c2142354

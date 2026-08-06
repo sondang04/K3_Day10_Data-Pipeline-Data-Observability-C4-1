@@ -1,6 +1,6 @@
 # Phase 1 - Baseline Report
 
-Generated at: 2026-08-06T03:11:15.985995+00:00
+Generated at: 2026-08-06T03:18:22.237561+00:00
 
 Baseline run of the RAG data pipeline on clean Crossref data: ingestion -> cleaning -> embedding index -> evaluation -> data quality and freshness monitoring.
 
@@ -70,7 +70,7 @@ Status: **FRESH** (threshold 180 days)
 
 | Field | Value |
 | --- | --- |
-| generated_at | 2026-08-06T03:11:15.983255+00:00 |
+| generated_at | 2026-08-06T03:18:22.235257+00:00 |
 | threshold_days | 180 |
 | total_rows | 24 |
 | stale_rows | 0 |
