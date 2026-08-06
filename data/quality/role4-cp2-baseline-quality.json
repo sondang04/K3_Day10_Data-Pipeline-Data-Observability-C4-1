@@ -1,0 +1,204 @@
+{
+  "report_name": "role4_cp2_baseline_quality",
+  "generated_at": "2026-08-06T04:10:27.527807+00:00",
+  "engine": "manual CP1 contract checks (great_expectations unavailable)",
+  "row_count": 24,
+  "column_count": 16,
+  "success": true,
+  "statistics": {
+    "evaluated_expectations": 15,
+    "successful_expectations": 15,
+    "unsuccessful_expectations": 0,
+    "success_percent": 100.0,
+    "great_expectations": {}
+  },
+  "failed_checks": [],
+  "checks": [
+    {
+      "expectation": "cp1_table_row_count_minimum",
+      "column": "",
+      "success": true,
+      "observed_value": 24,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_required_columns_present",
+      "column": "",
+      "success": true,
+      "observed_value": [
+        "abs_url",
+        "age_days",
+        "authors",
+        "authors_joined",
+        "categories",
+        "categories_joined",
+        "comment",
+        "paper_id",
+        "pdf_url",
+        "primary_category",
+        "published",
+        "summary",
+        "summary_chars",
+        "text_for_embedding",
+        "title",
+        "updated"
+      ],
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_paper_id_not_blank",
+      "column": "paper_id",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_paper_id_unique_normalized",
+      "column": "paper_id",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_title_not_blank",
+      "column": "title",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_title_min_length",
+      "column": "title",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_title_unique_normalized",
+      "column": "title",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_summary_not_blank",
+      "column": "summary",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_summary_min_length",
+      "column": "summary",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_text_for_embedding_not_blank",
+      "column": "text_for_embedding",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_published_valid_date",
+      "column": "published",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_age_days_non_negative",
+      "column": "age_days",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_age_days_within_freshness_threshold",
+      "column": "age_days",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_age_days_matches_published",
+      "column": "age_days,published",
+      "success": true,
+      "observed_value": 0,
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    },
+    {
+      "expectation": "cp1_source_timestamp_present",
+      "column": "updated",
+      "success": true,
+      "observed_value": {
+        "column": "updated",
+        "invalid_rows": 0
+      },
+      "element_count": null,
+      "unexpected_count": 0,
+      "unexpected_percent": null,
+      "unexpected_examples": [],
+      "error": null
+    }
+  ],
+  "report_path": "data/quality/role4-cp2-baseline-quality.json"
+}

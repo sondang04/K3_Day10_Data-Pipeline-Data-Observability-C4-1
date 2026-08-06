@@ -208,3 +208,182 @@ def generate_corruption_report(
 ) -> None:
     """TODO(student): viet markdown report so sanh baseline/corrupted/repaired."""
     raise NotImplementedError("Student task: implement corruption comparison report.")
+
+
+def generate_role4_cp2_report(
+    report_path,
+    test_set_path: str,
+    test_set_hash: str,
+    test_set_validation: dict[str, Any],
+    index_validation: dict[str, Any],
+    index_audit: dict[str, Any],
+    quality: dict[str, Any],
+    freshness: dict[str, Any],
+    preview_samples: list[dict[str, Any]],
+) -> None:
+    """Write auditable CP2 evidence for the evaluation/observability owner."""
+
+    overall_success = all(
+        [
+            test_set_validation.get("success"),
+            index_validation.get("success"),
+            index_audit.get("success"),
+            quality.get("success"),
+            freshness.get("is_fresh"),
+        ]
+    )
+    lines = [
+        "# Vai trò 4 — Checkpoint 2",
+        "",
+        f"Generated at: {now_utc().isoformat()}",
+        "",
+        f"Trạng thái: **{'PASS' if overall_success else 'REVIEW'}**",
+        "",
+        "## 1. Test set đã khóa",
+        "",
+        f"- Artifact: `{test_set_path}`",
+        f"- SHA-256: `{test_set_hash}`",
+        f"- Samples: **{test_set_validation.get('sample_count', 0)}**",
+        f"- Question types: **{', '.join(test_set_validation.get('question_types', [])) or '-'}**",
+        f"- Validation với clean data: **{'PASS' if test_set_validation.get('success') else 'FAIL'}**",
+        f"- Validation với baseline index: **{'PASS' if index_validation.get('success') else 'FAIL'}**",
+        f"- Document IDs được tham chiếu: **{index_validation.get('referenced_document_count', 0)}**",
+        "",
+        "### Preview",
+        "",
+        "| ID | Type | Question | Ground-truth document |",
+        "| --- | --- | --- | --- |",
+    ]
+    for sample in preview_samples:
+        question = str(sample.get("question", "")).replace("|", "\\|")
+        doc_ids = ", ".join(sample.get("ground_truth_doc_ids", []))
+        lines.append(
+            f"| {sample.get('id')} | {sample.get('question_type')} | {question} | {doc_ids} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## 2. Baseline embedding/index audit",
+            "",
+            f"- Audit status: **{'PASS' if index_audit.get('success') else 'FAIL'}**",
+            f"- Backend/model: **{index_audit.get('backend')} / {index_audit.get('embedding_model')}**",
+            f"- Collection: **{index_audit.get('collection_name')}**",
+            f"- Embedding dimension: **{index_audit.get('embedding_dimension')}**",
+            f"- Clean / manifest / collection counts: **{index_audit.get('clean_document_count')} / "
+            f"{index_audit.get('manifest_document_count')} / {index_audit.get('collection_document_count')}**",
+            f"- Runtime persist path: `{index_audit.get('runtime_persist_path')}`",
+            f"- Chroma database: `{index_audit.get('chroma_database')}`",
+            f"- Failed checks: **{', '.join(index_audit.get('failed_checks') or []) or 'none'}**",
+            "",
+            "### Audit checks",
+            "",
+            "| Check | Result | Observed | Expected |",
+            "| --- | --- | --- | --- |",
+        ]
+    )
+    for check in index_audit.get("checks", []):
+        lines.append(
+            f"| {check.get('check')} | {'pass' if check.get('success') else 'FAIL'} | "
+            f"{_format_value(check.get('observed'))} | {_format_value(check.get('expected'))} |"
+        )
+    warnings = index_audit.get("warnings") or []
+    if warnings:
+        lines.extend(["", "Warnings:", "", *[f"- {warning}" for warning in warnings]])
+
+    lines.extend(
+        [
+            "",
+            "## 3. Baseline observability snapshot",
+            "",
+            f"- Quality: **{'PASS' if quality.get('success') else 'FAIL'}**, "
+            f"{quality.get('statistics', {}).get('successful_expectations', 0)}/"
+            f"{quality.get('statistics', {}).get('evaluated_expectations', 0)} checks passed.",
+            f"- Freshness: **{'FRESH' if freshness.get('is_fresh') else 'STALE/INVALID'}**, "
+            f"fresh/stale rows = {freshness.get('fresh_rows', 0)}/{freshness.get('stale_rows', 0)}.",
+            f"- Latest/oldest publication: **{freshness.get('latest_published')} / {freshness.get('oldest_published')}**.",
+            f"- Source timestamp column: **{freshness.get('source_timestamp_column') or 'missing'}**; "
+            f"latest timestamp: **{freshness.get('latest_ingested_at')}**.",
+            "",
+            "## 4. Handoff sang CP3",
+            "",
+            "- Không tạo lại test set; SHA-256 ở trên là mốc đối chiếu cho baseline, corrupted và repaired.",
+            "- Role 3 có thể chạy semantic search, exact lookup và agent smoke test trên `papers-baseline`.",
+            "- Role 4 chỉ điền metric thật vào phase1 report sau khi baseline evaluation hoàn tất.",
+            "",
+            "## Chạy lại",
+            "",
+            "```bash",
+            "uv run python script/run_role4_cp2.py",
+            "```",
+            "",
+        ]
+    )
+    write_text(report_path, "\n".join(lines))
+
+
+def generate_phase1_cp2_template(
+    report_path,
+    test_set_hash: str,
+    test_set_validation: dict[str, Any],
+    index_audit: dict[str, Any],
+    quality: dict[str, Any],
+    freshness: dict[str, Any],
+) -> None:
+    """Prepare the CP3 report shell while leaving evaluation metrics explicitly pending."""
+
+    lines = [
+        "# Phase 1 — Baseline Report (CP2 template)",
+        "",
+        f"Prepared at: {now_utc().isoformat()}",
+        "",
+        "This template contains only verified CP2 facts. Evaluation metrics remain pending until CP3; no values are fabricated.",
+        "",
+        "## 1. Locked evaluation set",
+        "",
+        f"- Samples: {test_set_validation.get('sample_count', 0)}",
+        f"- Types: {', '.join(test_set_validation.get('question_types', []))}",
+        f"- SHA-256: `{test_set_hash}`",
+        "",
+        "## 2. Baseline index",
+        "",
+        f"- Backend: {index_audit.get('backend')}",
+        f"- Embedding model: {index_audit.get('embedding_model')}",
+        f"- Collection: {index_audit.get('collection_name')}",
+        f"- Documents: {index_audit.get('collection_document_count')}",
+        f"- Dimension: {index_audit.get('embedding_dimension')}",
+        "",
+        "## 3. Evaluation metrics — fill at CP3",
+        "",
+        "| Metric | Value |",
+        "| --- | --- |",
+        "| Evaluation samples | PENDING_CP3 |",
+        "| Retrieval hit rate | PENDING_CP3 |",
+        "| Mean token F1 | PENDING_CP3 |",
+        "| Judge accuracy | PENDING_CP3 |",
+        "| Mean judge score (1–5) | PENDING_CP3 |",
+        "| Ragas | PENDING_CP3 |",
+        "",
+        "## 4. Data quality",
+        "",
+        f"- Status: {'PASS' if quality.get('success') else 'FAIL'}",
+        f"- Rows: {quality.get('row_count', 0)}",
+        f"- Checks passed: {quality.get('statistics', {}).get('successful_expectations', 0)}/"
+        f"{quality.get('statistics', {}).get('evaluated_expectations', 0)}",
+        "",
+        "## 5. Freshness",
+        "",
+        f"- Status: {'FRESH' if freshness.get('is_fresh') else 'STALE/INVALID'}",
+        f"- Fresh/stale rows: {freshness.get('fresh_rows', 0)}/{freshness.get('stale_rows', 0)}",
+        f"- Threshold: {freshness.get('threshold_days')} days",
+        f"- Latest publication: {freshness.get('latest_published')}",
+        f"- Source timestamp: {freshness.get('source_timestamp_column') or 'missing'} = {freshness.get('latest_ingested_at')}",
+        "",
+        "## 6. CP3 evidence to attach",
+        "",
+        "- `data/results/baseline_answers.json`",
+        "- `data/results/baseline_metrics.json`",
+        "- Agent smoke-test output with cited sources",
+        "",
+    ]
+    write_text(report_path, "\n".join(lines))

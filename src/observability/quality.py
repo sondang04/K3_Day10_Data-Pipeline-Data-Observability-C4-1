@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+import sqlite3
 from typing import Any
 
 import pandas as pd
@@ -10,7 +12,7 @@ except ImportError:  # pragma: no cover - exercised only in lightweight environm
     gx = None
 
 from core.config import Settings
-from core.utils import normalize_whitespace, now_utc, safe_slug, write_json
+from core.utils import normalize_whitespace, now_utc, read_json, safe_slug, write_json
 from ingestion.cleaning import MIN_SUMMARY_CHARS, MIN_TITLE_CHARS, PUBLISHED_PATTERN
 
 MIN_EXPECTED_ROWS = 10
@@ -97,7 +99,7 @@ def _contract_checks(df: pd.DataFrame, settings: Settings) -> list[dict[str, Any
         )
     )
 
-    required_columns = ["paper_id", "title", "summary", "text_for_embedding", "published", "age_days", "ingested_at"]
+    required_columns = ["paper_id", "title", "summary", "text_for_embedding", "published", "age_days"]
     missing_columns = [column for column in required_columns if column not in df.columns]
     checks.append(
         _manual_check(
@@ -258,17 +260,21 @@ def _contract_checks(df: pd.DataFrame, settings: Settings) -> list[dict[str, Any
         ]
     )
 
-    ingested_at_text = _series_or_blank(df, "ingested_at")
-    ingested_at = pd.to_datetime(ingested_at_text, errors="coerce", utc=True)
-    invalid_ingested_at = ingested_at.isna()
+    source_timestamp_column = "ingested_at" if "ingested_at" in df.columns else "updated" if "updated" in df.columns else ""
+    source_timestamp_text = _series_or_blank(df, source_timestamp_column) if source_timestamp_column else _series_or_blank(df, "ingested_at")
+    source_timestamp = pd.to_datetime(source_timestamp_text, errors="coerce", utc=True)
+    invalid_source_timestamp = source_timestamp.isna()
     checks.append(
         _manual_check(
             "cp1_source_timestamp_present",
-            "ingested_at",
-            not invalid_ingested_at.any(),
-            int(invalid_ingested_at.sum()),
-            int(invalid_ingested_at.sum()),
-            ingested_at_text[invalid_ingested_at].tolist(),
+            source_timestamp_column or "ingested_at|updated",
+            bool(source_timestamp_column) and not invalid_source_timestamp.any(),
+            {
+                "column": source_timestamp_column or None,
+                "invalid_rows": int(invalid_source_timestamp.sum()),
+            },
+            int(invalid_source_timestamp.sum()) if source_timestamp_column else len(df),
+            source_timestamp_text[invalid_source_timestamp].tolist(),
         )
     )
     return checks
@@ -359,10 +365,15 @@ def build_freshness_report(df: pd.DataFrame, settings: Settings, report_path) ->
 
     published = pd.to_datetime(_series_or_blank(df, "published"), errors="coerce", utc=True)
     age_days = pd.to_numeric(_series_or_blank(df, "age_days"), errors="coerce")
-    ingested_at = pd.to_datetime(_series_or_blank(df, "ingested_at"), errors="coerce", utc=True)
+    source_timestamp_column = "ingested_at" if "ingested_at" in df.columns else "updated" if "updated" in df.columns else ""
+    source_timestamp = pd.to_datetime(
+        _series_or_blank(df, source_timestamp_column) if source_timestamp_column else _series_or_blank(df, "ingested_at"),
+        errors="coerce",
+        utc=True,
+    )
     latest = published.max()
     oldest = published.min()
-    latest_ingested_at = ingested_at.max()
+    latest_ingested_at = source_timestamp.max()
 
     computed_age_days = (pd.Timestamp(generated_at).normalize() - published.dt.normalize()).dt.days
     invalid_published = published.isna()
@@ -390,6 +401,7 @@ def build_freshness_report(df: pd.DataFrame, settings: Settings, report_path) ->
         "days_since_latest_publication": days_since_latest,
         "max_age_days": int(age_days.max()) if age_days.notna().any() else None,
         "mean_age_days": round(float(age_days.mean()), 2) if age_days.notna().any() else None,
+        "source_timestamp_column": source_timestamp_column or None,
         "latest_ingested_at": latest_ingested_at.isoformat() if pd.notna(latest_ingested_at) else None,
         "source_lag_hours": source_lag_hours,
         "is_fresh": stale_rows == 0 and not age_mismatch.any() and days_since_latest is not None and days_since_latest <= threshold,
@@ -399,4 +411,205 @@ def build_freshness_report(df: pd.DataFrame, settings: Settings, report_path) ->
         ),
     }
     write_json(report_path, payload)
+    return payload
+
+
+def _audit_check(name: str, success: bool, observed: Any, expected: Any = None) -> dict[str, Any]:
+    return {
+        "check": name,
+        "success": bool(success),
+        "observed": observed,
+        "expected": expected,
+    }
+
+
+def _read_chroma_collection_snapshot(database_path: Path, collection_name: str) -> dict[str, Any]:
+    """Read collection identity and metadata IDs from Chroma's SQLite catalog.
+
+    Chroma stores document metadata in its SQLite metadata segment while HNSW vectors
+    live in separate binary files.  Reading this catalog avoids loading the embedding
+    model and makes the CP2 audit cheap and reproducible.
+    """
+
+    if not database_path.exists():
+        return {
+            "database_exists": False,
+            "collection_exists": False,
+            "collection_name": collection_name,
+            "document_count": 0,
+            "paper_ids": [],
+            "dimension": None,
+            "error": f"Missing Chroma database: {database_path}",
+        }
+
+    try:
+        connection = sqlite3.connect(database_path)
+        connection.row_factory = sqlite3.Row
+        collection = connection.execute(
+            "SELECT id, name, dimension FROM collections WHERE name = ? LIMIT 1",
+            (collection_name,),
+        ).fetchone()
+        if collection is None:
+            return {
+                "database_exists": True,
+                "collection_exists": False,
+                "collection_name": collection_name,
+                "document_count": 0,
+                "paper_ids": [],
+                "dimension": None,
+                "error": f"Collection not found: {collection_name}",
+            }
+
+        metadata_segment = connection.execute(
+            "SELECT id FROM segments WHERE collection = ? AND scope = 'METADATA' LIMIT 1",
+            (collection["id"],),
+        ).fetchone()
+        if metadata_segment is None:
+            return {
+                "database_exists": True,
+                "collection_exists": True,
+                "collection_name": collection_name,
+                "document_count": 0,
+                "paper_ids": [],
+                "dimension": collection["dimension"],
+                "error": "Collection has no METADATA segment.",
+            }
+
+        paper_id_rows = connection.execute(
+            """
+            SELECT em.string_value AS paper_id
+            FROM embeddings AS e
+            JOIN embedding_metadata AS em ON em.id = e.id
+            WHERE e.segment_id = ? AND em.key = 'paper_id'
+            ORDER BY e.id
+            """,
+            (metadata_segment["id"],),
+        ).fetchall()
+        document_count = connection.execute(
+            "SELECT COUNT(*) FROM embeddings WHERE segment_id = ?",
+            (metadata_segment["id"],),
+        ).fetchone()[0]
+        paper_ids = [normalize_whitespace(str(row["paper_id"])).lower() for row in paper_id_rows]
+        return {
+            "database_exists": True,
+            "collection_exists": True,
+            "collection_name": collection_name,
+            "document_count": int(document_count),
+            "paper_ids": paper_ids,
+            "dimension": collection["dimension"],
+            "error": None,
+        }
+    except (sqlite3.DatabaseError, KeyError, TypeError) as exc:
+        return {
+            "database_exists": True,
+            "collection_exists": False,
+            "collection_name": collection_name,
+            "document_count": 0,
+            "paper_ids": [],
+            "dimension": None,
+            "error": str(exc),
+        }
+    finally:
+        try:
+            connection.close()
+        except UnboundLocalError:
+            pass
+
+
+def audit_baseline_index(
+    df: pd.DataFrame,
+    settings: Settings,
+    manifest_path: Path,
+    output_path: Path,
+) -> dict[str, Any]:
+    """Audit the CP2 clean -> manifest -> Chroma contract without rebuilding the index."""
+
+    manifest = read_json(manifest_path) if manifest_path.exists() else {}
+    documents = manifest.get("documents") if isinstance(manifest, dict) else None
+    documents = documents if isinstance(documents, list) else []
+
+    clean_ids = [value.lower() for value in _series_or_blank(df, "paper_id") if value]
+    manifest_ids = [
+        normalize_whitespace(str(document.get("paper_id", ""))).lower()
+        for document in documents
+        if isinstance(document, dict)
+    ]
+    clean_id_set = set(clean_ids)
+    manifest_id_set = {value for value in manifest_ids if value}
+    expected_collection_name = settings.baseline_collection_name
+    actual_collection_name = manifest.get("collection_name") if isinstance(manifest, dict) else None
+    chroma_database = settings.paths.chroma_dir / "chroma.sqlite3"
+    collection = _read_chroma_collection_snapshot(chroma_database, str(actual_collection_name or expected_collection_name))
+    index_ids = collection.get("paper_ids", [])
+    index_id_set = set(index_ids)
+
+    manifest_relative = str(manifest_path.relative_to(settings.paths.project_dir))
+    chroma_relative = str(chroma_database.relative_to(settings.paths.project_dir))
+    required_manifest_fields = {"backend", "embedding_model", "persist_path", "collection_name", "documents"}
+    missing_manifest_fields = sorted(required_manifest_fields - set(manifest)) if isinstance(manifest, dict) else sorted(required_manifest_fields)
+    duplicate_manifest_ids = sorted({value for value in manifest_ids if value and manifest_ids.count(value) > 1})
+    duplicate_index_ids = sorted({value for value in index_ids if value and index_ids.count(value) > 1})
+
+    checks = [
+        _audit_check("manifest_exists", manifest_path.exists(), manifest_relative),
+        _audit_check("manifest_required_fields", not missing_manifest_fields, missing_manifest_fields, []),
+        _audit_check("backend_is_chroma", manifest.get("backend") == "chroma", manifest.get("backend"), "chroma"),
+        _audit_check(
+            "embedding_model_matches_settings",
+            manifest.get("embedding_model") == settings.embedding_model,
+            manifest.get("embedding_model"),
+            settings.embedding_model,
+        ),
+        _audit_check(
+            "collection_name_is_baseline",
+            actual_collection_name == expected_collection_name,
+            actual_collection_name,
+            expected_collection_name,
+        ),
+        _audit_check("manifest_document_count_matches_clean", len(documents) == len(df), len(documents), int(len(df))),
+        _audit_check("manifest_paper_ids_are_unique", not duplicate_manifest_ids, duplicate_manifest_ids, []),
+        _audit_check("manifest_paper_ids_match_clean", manifest_id_set == clean_id_set, sorted(manifest_id_set ^ clean_id_set), []),
+        _audit_check("chroma_database_exists", collection["database_exists"], chroma_relative),
+        _audit_check("baseline_collection_exists", collection["collection_exists"], collection.get("error"), None),
+        _audit_check(
+            "collection_document_count_matches_clean",
+            collection.get("document_count") == len(df),
+            collection.get("document_count"),
+            int(len(df)),
+        ),
+        _audit_check("collection_paper_ids_are_unique", not duplicate_index_ids, duplicate_index_ids, []),
+        _audit_check("collection_paper_ids_match_clean", index_id_set == clean_id_set, sorted(index_id_set ^ clean_id_set), []),
+        _audit_check("embedding_dimension_is_minilm", collection.get("dimension") == 384, collection.get("dimension"), 384),
+    ]
+
+    recorded_persist_path = str(manifest.get("persist_path", "")) if isinstance(manifest, dict) else ""
+    runtime_persist_path = str(settings.paths.chroma_dir)
+    warnings: list[str] = []
+    if recorded_persist_path and Path(recorded_persist_path) != settings.paths.chroma_dir:
+        warnings.append(
+            "Manifest persist_path was created on another machine; runtime uses settings.paths.chroma_dir. "
+            "This does not affect LocalEmbeddingIndex.load because it resolves the configured project path."
+        )
+
+    failed_checks = [check["check"] for check in checks if not check["success"]]
+    payload = {
+        "generated_at": now_utc().isoformat(),
+        "success": not failed_checks,
+        "manifest_path": manifest_relative,
+        "recorded_persist_path": recorded_persist_path,
+        "runtime_persist_path": str(settings.paths.chroma_dir.relative_to(settings.paths.project_dir)),
+        "chroma_database": chroma_relative,
+        "backend": manifest.get("backend"),
+        "embedding_model": manifest.get("embedding_model"),
+        "collection_name": actual_collection_name,
+        "embedding_dimension": collection.get("dimension"),
+        "clean_document_count": int(len(df)),
+        "manifest_document_count": len(documents),
+        "collection_document_count": collection.get("document_count", 0),
+        "indexed_paper_ids": index_ids,
+        "failed_checks": failed_checks,
+        "warnings": warnings,
+        "checks": checks,
+    }
+    write_json(output_path, payload)
     return payload

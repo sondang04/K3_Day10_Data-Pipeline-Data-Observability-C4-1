@@ -160,3 +160,48 @@ def build_test_set(df: pd.DataFrame, output_path: Path) -> list[dict[str, Any]]:
     validate_test_set(samples, df)
     write_json(output_path, samples)
     return samples
+
+
+def validate_test_set_against_index(
+    samples: list[dict[str, Any]],
+    indexed_paper_ids: list[str] | set[str],
+) -> dict[str, Any]:
+    """Validate the locked test set against paper IDs actually stored in the baseline index.
+
+    This CP2 check is intentionally independent from the retrieval implementation.  The
+    observability runner can obtain IDs from Chroma metadata and prove that every
+    ``ground_truth_doc_ids`` value is retrievable before baseline evaluation starts.
+    """
+
+    normalized_index_ids = [normalize_whitespace(str(value)).lower() for value in indexed_paper_ids]
+    blank_index_ids = [value for value in normalized_index_ids if not value]
+    index_id_set = {value for value in normalized_index_ids if value}
+    duplicate_index_ids = sorted(
+        {value for value in normalized_index_ids if value and normalized_index_ids.count(value) > 1}
+    )
+
+    missing_by_sample: list[dict[str, Any]] = []
+    referenced_ids: set[str] = set()
+    for sample in samples:
+        doc_ids = {
+            normalize_whitespace(str(value)).lower()
+            for value in sample.get("ground_truth_doc_ids", [])
+            if normalize_whitespace(str(value))
+        }
+        referenced_ids.update(doc_ids)
+        missing = sorted(doc_ids - index_id_set)
+        if missing:
+            missing_by_sample.append({"id": sample.get("id"), "missing_doc_ids": missing})
+
+    result = {
+        "success": not blank_index_ids and not duplicate_index_ids and not missing_by_sample,
+        "index_document_count": len(normalized_index_ids),
+        "unique_index_document_count": len(index_id_set),
+        "referenced_document_count": len(referenced_ids),
+        "blank_index_ids": blank_index_ids[:5],
+        "duplicate_index_ids": duplicate_index_ids[:5],
+        "missing_by_sample": missing_by_sample,
+    }
+    if not result["success"]:
+        raise ValueError(f"Evaluation set cannot be locked against index: {result}")
+    return result
