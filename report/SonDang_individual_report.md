@@ -46,7 +46,7 @@ Tôi chỉ nhận ownership cho `phase1.py`, script trace/so sánh và phần ch
 
 Nêu một output cụ thể mà phần việc của tôi tạo ra hoặc giúp xác minh:
 
-`data/results/ragas_modes/comparison.json` là output tôi thấy có giá trị nhất. Nó không chỉ chép lại metric mà so từng record giữa baseline, corrupted và repaired rồi gắn nhãn corruption cho từng `paper_id` (`record_dropped`, `summary_blanked`, `summary_noise_injected[[UNVERIFIED]]`, `title_truncated`, `published_backdated[2026-07-03->2001-01-01]`, `paper_id_mutated`), đồng thời theo dõi từng câu hỏi chuyển trạng thái hit/F1 ra sao. Nhờ file này nhóm mới chỉ ra được chính xác vì sao `retrieval_hit_rate` rớt 0.200: 5 câu `02-*` cùng hỏi về `10.3390/buildings16132637`, paper này bị xóa nên retrieval trả về `10.63646/kpqm1958` — một paper **không** bị corrupt nhưng gần về ngữ nghĩa.
+`data/results/ragas_modes/comparison.json` là output có giá trị nhất. Nó không chỉ chép lại metric mà so từng record giữa baseline, corrupted và repaired rồi gắn nhãn corruption cho từng `paper_id` (`record_dropped`, `summary_blanked`, `summary_noise_injected[[UNVERIFIED]]`, `title_truncated`, `published_backdated[2026-07-03->2001-01-01]`, `paper_id_mutated`), đồng thời theo dõi từng câu hỏi chuyển trạng thái hit/F1 ra sao. Nhờ file này nhóm mới chỉ ra được chính xác vì sao `retrieval_hit_rate` rớt 0.200: 5 câu `02-*` cùng hỏi về `10.3390/buildings16132637`, paper này bị xóa nên retrieval trả về `10.63646/kpqm1958` không bị corrupt nhưng gần về ngữ nghĩa.
 
 ## 4. Giải thích phần kỹ thuật đã thực hiện
 
@@ -58,7 +58,7 @@ Mỗi module trong `src/` chạy riêng thì đúng, nhưng bài lab chỉ có �
 
 `phase1.py` chạy 8 bước: (1) nạp raw records — gọi Crossref nếu chưa có snapshot hoặc khi `REFRESH_SOURCE=1`, ngược lại đọc `data/raw/crossref_records.json`; (2) clean; (3) ghi CSV + JSON; (4) build ChromaDB index; (5) sinh hoặc nạp lại test set; (6) evaluate; (7) quality checks + freshness; (8) xuất báo cáo Markdown, rồi chạy thêm agent demo. Mỗi bước in một dòng log có số thứ tự và một dòng số liệu tóm tắt, để khi hỏng thì biết ngay hỏng ở đâu.
 
-Hai quyết định về khả năng tái hiện: mặc định **không** gọi lại API và **không** sinh lại test set, vì Crossref là nguồn sống — nếu mỗi lần chạy lại lấy dữ liệu mới thì baseline và corrupted không còn so sánh được với nhau. Agent demo được bọc `try/except` vì nó là phần duy nhất bắt buộc phải có LLM provider; thiếu credential thì demo ghi `status: skipped` chứ không làm hỏng cả pipeline.
+Hai quyết định về khả năng tái hiện: mặc định không gọi lại API và không sinh lại test set, vì Crossref là nguồn sống — nếu mỗi lần chạy lại lấy dữ liệu mới thì baseline và corrupted không còn so sánh được với nhau. Agent demo được bọc `try/except` vì nó là phần duy nhất bắt buộc phải có LLM provider; thiếu credential thì demo ghi `status: skipped` chứ không làm hỏng cả pipeline.
 
 `script/run_ragas_comparison.py` chạy `phase1.main()` rồi `corruption_flow.main()` trong cùng tiến trình, seed `random` ngay trước bước corruption, chụp lại artifact vào `data/results/ragas_modes/`, sau đó suy ra trace bằng cách so sánh các file CSV/JSON thay vì chèn code đo đạc vào module của người khác — cách này không đụng vào file các bạn đang sửa.
 
