@@ -119,120 +119,92 @@ def generate_phase1_report(
     write_text(report_path, "\n".join(lines))
 
 
+def generate_role4_cp0_cp1_report(
+    report_path,
+    clean_path: str,
+    test_set_path: str,
+    test_set_validation: dict[str, Any],
+    quality: dict[str, Any],
+    freshness: dict[str, Any],
+) -> None:
+    """Write the role-4 handoff evidence required at CP0 and CP1."""
+
+    status = "PASS" if quality.get("success") and freshness.get("is_fresh") else "REVIEW"
+    question_types = ", ".join(test_set_validation.get("question_types", [])) or "-"
+    lines = [
+        "# Vai trò 4 — Hoàn thành CP0–CP1",
+        "",
+        f"Generated at: {now_utc().isoformat()}",
+        "",
+        f"Trạng thái bàn giao: **{status}**",
+        "",
+        "## CP0 — Contract evaluation và observability",
+        "",
+        "### Evaluation contract",
+        "",
+        "- Input là cleaned dataframe; không tạo câu hỏi từ raw data chưa chuẩn hóa.",
+        "- Mỗi sample gồm: `id`, `question_type`, `question`, `ground_truth`, `ground_truth_doc_ids`.",
+        "- `ground_truth_doc_ids` chỉ lấy từ `paper_id` ổn định và duy nhất trong clean data.",
+        "- Nhóm câu hỏi dự kiến: summary, authors, date, categories và semantic retrieval.",
+        "- Cùng một test set sẽ được khóa để so sánh baseline, corrupted và repaired ở các checkpoint sau.",
+        "",
+        "### Observability contract",
+        "",
+        "| Signal | Ý nghĩa |",
+        "| --- | --- |",
+        "| Row count | Phát hiện dataset thiếu hoặc bị drop bất thường |",
+        "| Missing/blank | Kiểm tra `paper_id`, title, summary và `text_for_embedding` |",
+        "| Duplicate | Kiểm tra `paper_id` và title sau chuẩn hóa |",
+        "| Freshness | Đối chiếu `published`, `age_days` và ngưỡng freshness |",
+        "| Source timestamp | Kiểm tra `ingested_at` và độ trễ từ lần ingest gần nhất |",
+        "",
+        "Artifacts sẽ dùng xuyên pipeline: clean CSV/JSON, test set, answers/metrics, quality JSON, freshness JSON và Markdown reports.",
+        "",
+        "## CP1 — Kết quả trên cleaned data",
+        "",
+        f"- Clean artifact: `{clean_path}`",
+        f"- Số dòng sạch: **{quality.get('row_count', 0)}**",
+        f"- Quality status: **{'PASS' if quality.get('success') else 'FAIL'}**",
+        f"- Quality checks đạt: **{quality.get('statistics', {}).get('successful_expectations', 0)}/"
+        f"{quality.get('statistics', {}).get('evaluated_expectations', 0)}**",
+        f"- Failed checks: **{', '.join(quality.get('failed_checks') or []) or 'none'}**",
+        f"- Freshness status: **{'FRESH' if freshness.get('is_fresh') else 'STALE/INVALID'}**",
+        f"- Fresh/stale rows: **{freshness.get('fresh_rows', 0)}/{freshness.get('stale_rows', 0)}**",
+        f"- Latest/oldest publication: **{freshness.get('latest_published')} / {freshness.get('oldest_published')}**",
+        f"- Age mismatch rows: **{freshness.get('age_mismatch_rows', 0)}**",
+        f"- Latest source timestamp: **{freshness.get('latest_ingested_at')}**",
+        "",
+        "## Evaluation draft đã kiểm chứng",
+        "",
+        f"- Test set artifact: `{test_set_path}`",
+        f"- Số sample: **{test_set_validation.get('sample_count', 0)}**",
+        f"- Question types: **{question_types}**",
+        f"- Clean document IDs có thể đối chiếu: **{test_set_validation.get('clean_document_count', 0)}**",
+        f"- Validation: **{'PASS' if test_set_validation.get('success') else 'FAIL'}**",
+        "",
+        "## Handoff sang CP2",
+        "",
+        "Vai trò 3 có thể build baseline index từ clean artifact. Vai trò 4 chỉ chạy retrieval evaluation sau khi collection baseline tồn tại; không thay đổi test set giữa ba trạng thái.",
+        "",
+        "## Chạy lại",
+        "",
+        "```bash",
+        "uv run python script/run_role4_cp0_cp1.py",
+        "```",
+        "",
+    ]
+    write_text(report_path, "\n".join(lines))
+
+
 def generate_corruption_report(
     report_path,
     baseline_metrics: dict[str, Any],
     corrupted_metrics: dict[str, Any],
     repaired_metrics: dict[str, Any],
-    comparison: dict[str, Any],
-    corruption_log_path=None,
+    corrupted_quality: dict[str, Any],
+    repaired_quality: dict[str, Any],
+    corrupted_freshness: dict[str, Any],
+    repaired_freshness: dict[str, Any],
 ) -> None:
-    """Write markdown report comparing baseline/corrupted/repaired."""
-    lines = [
-        "# Corruption Flow - Comparison Report",
-        "",
-        f"Generated at: {now_utc().isoformat()}",
-        "",
-        "This report compares three pipeline states to demonstrate the impact of data corruption",
-        "on RAG agent quality and the effectiveness of recovery from raw source data.",
-        "",
-        "## 1. Comparison Summary",
-        "",
-        "| Metric | Baseline | Corrupted | Repaired | Corrupted Δ | Repaired Δ |",
-        "| --- | --- | --- | --- | --- | --- |",
-    ]
-
-    for metric_name in ["retrieval_hit_rate", "mean_token_f1", "judge_accuracy", "mean_judge_score"]:
-        delta = comparison.get("delta", {}).get(metric_name, {})
-        baseline_val = delta.get("baseline")
-        corrupted_val = delta.get("corrupted")
-        repaired_val = delta.get("repaired")
-        corrupted_delta = delta.get("corrupted_delta", 0)
-        repaired_delta = delta.get("repaired_delta", 0)
-
-        def fmt(v):
-            if v is None:
-                return "-"
-            if isinstance(v, float):
-                return f"{v:.3f}"
-            return str(v)
-
-        lines.append(
-            f"| {metric_name} | {fmt(baseline_val)} | {fmt(corrupted_val)} | "
-            f"{fmt(repaired_val)} | {corrupted_delta:+.3f} | {repaired_delta:+.3f} |"
-        )
-
-    lines.extend([
-        "",
-        "## 2. Record Counts",
-        "",
-        f"- Baseline records: {comparison.get('record_counts', {}).get('baseline', 'N/A')}",
-        f"- Corrupted records: {comparison.get('record_counts', {}).get('corrupted', 'N/A')}",
-        f"- Repaired records: {comparison.get('record_counts', {}).get('repaired', 'N/A')}",
-        "",
-        "## 3. Quality Status",
-        "",
-        f"- Baseline: {comparison.get('quality_status', {}).get('baseline', 'N/A').upper()}",
-        f"- Corrupted: {comparison.get('quality_status', {}).get('corrupted', 'N/A').upper()}",
-        f"- Repaired: {comparison.get('quality_status', {}).get('repaired', 'N/A').upper()}",
-        "",
-        "## 4. Freshness Status",
-        "",
-        f"- Baseline: {comparison.get('freshness_status', {}).get('baseline', 'N/A').upper()}",
-        f"- Corrupted: {comparison.get('freshness_status', {}).get('corrupted', 'N/A').upper()}",
-        f"- Repaired: {comparison.get('freshness_status', {}).get('repaired', 'N/A').upper()}",
-        "",
-        "## 5. Corruption Applied",
-        "",
-    ])
-
-    if corruption_log_path.exists():
-        import json
-        with open(corruption_log_path, "r", encoding="utf-8") as f:
-            log = json.load(f)
-        lines.append(f"- Initial records: {log.get('initial_count', 'N/A')}")
-        lines.append(f"- Final records: {log.get('final_count', 'N/A')}")
-        lines.append(f"- Corruption types applied: {', '.join(log.get('corruption_types', []))}")
-        lines.append("")
-        for entry in log.get("corruption_log", []):
-            lines.append(f"  - {entry.get('description', entry.get('type', 'unknown'))}: {entry.get('count', 0)} records")
-    else:
-        lines.append("_Corruption log not available_")
-
-    lines.extend([
-        "",
-        "## 6. Key Findings",
-        "",
-    ])
-
-    hit_rate_delta = comparison.get("delta", {}).get("retrieval_hit_rate", {}).get("corrupted_delta", 0)
-    if hit_rate_delta < -0.1:
-        lines.append("- **Retrieval performance degraded** after corruption, demonstrating data quality impact.")
-    elif hit_rate_delta > 0.1:
-        lines.append("- **Retrieval performance improved** unexpectedly (possible lucky corruption).")
-    else:
-        lines.append("- Retrieval performance relatively stable despite corruption.")
-
-    repair_delta = comparison.get("delta", {}).get("retrieval_hit_rate", {}).get("repaired_delta", 0)
-    if abs(repair_delta) < 0.05:
-        lines.append("- **Recovery successful**: Repaired metrics approximately match baseline.")
-    elif repair_delta > hit_rate_delta:
-        lines.append("- **Partial recovery**: Repaired metrics closer to baseline than corrupted state.")
-    else:
-        lines.append("- Recovery did not fully restore baseline performance.")
-
-    lines.extend([
-        "",
-        "## 7. Reproduce",
-        "",
-        "```bash",
-        "# First run baseline",
-        "uv run python script/run_phase1.py",
-        "",
-        "# Then run corruption flow",
-        "uv run python script/run_corruption_flow.py",
-        "```",
-        "",
-    ])
-
-    write_text(report_path, "\n".join(lines))
+    """TODO(student): viet markdown report so sanh baseline/corrupted/repaired."""
+    raise NotImplementedError("Student task: implement corruption comparison report.")
