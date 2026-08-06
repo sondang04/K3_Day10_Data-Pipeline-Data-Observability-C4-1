@@ -1,0 +1,10 @@
+{
+  "samples": 25,
+  "retrieval_hit_rate": 1.0,
+  "mean_token_f1": 0.8125238095238095,
+  "judge_accuracy": 0.88,
+  "mean_judge_score": 4.04,
+  "ragas": {
+    "error": "Ragas evaluation failed: GOOGLE_API_KEY is required when LLM_PROVIDER=gemini."
+  }
+}
