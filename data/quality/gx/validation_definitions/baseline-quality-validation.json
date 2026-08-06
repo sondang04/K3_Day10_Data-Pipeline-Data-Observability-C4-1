@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "d72199c0-e71b-4fbc-8a07-4dabdd52a9d0",
+      "name": "baseline-quality"
+    },
+    "batch_definition": {
+      "id": "ec420551-545c-4358-8a1f-368f5a6fac5c",
+      "name": "batch"
+    },
+    "datasource": {
+      "id": "f4ff41b0-0ef3-4222-9a05-521535bfc75f",
+      "name": "papers"
+    }
+  },
+  "id": "a10151ca-1ce6-43a0-8c25-34a344eb2aa8",
+  "name": "baseline-quality-validation",
+  "suite": {
+    "id": "7b694b61-4edc-41e0-b07a-6b2ce967c8e0",
+    "name": "baseline-quality-suite"
+  }
+}

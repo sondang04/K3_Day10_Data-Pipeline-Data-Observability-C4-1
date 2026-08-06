@@ -1,0 +1,105 @@
+{
+  "expectations": [
+    {
+      "id": "6ea23399-6110-487e-b27c-4a693f4a7672",
+      "kwargs": {
+        "min_value": 10
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_table_row_count_to_be_between"
+    },
+    {
+      "id": "83da8d28-aa8e-4471-a8d8-579143effed2",
+      "kwargs": {
+        "column": "paper_id"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "865edea7-32ab-4d14-89db-1a39491d0c7e",
+      "kwargs": {
+        "column": "paper_id"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_unique"
+    },
+    {
+      "id": "4b8204ee-5db1-4058-b479-5e8804e84e36",
+      "kwargs": {
+        "column": "title"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "94a5482a-dfaf-487c-84c2-082edc019bb9",
+      "kwargs": {
+        "column": "title",
+        "min_value": 12
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_value_lengths_to_be_between"
+    },
+    {
+      "id": "66ca4f59-f158-463b-a4e7-80c088661206",
+      "kwargs": {
+        "column": "summary"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "87344a6d-f429-4e75-ba63-11732f740838",
+      "kwargs": {
+        "column": "summary",
+        "min_value": 80
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_value_lengths_to_be_between"
+    },
+    {
+      "id": "faa69316-4be3-4f3a-8288-e305d83cb70f",
+      "kwargs": {
+        "column": "text_for_embedding"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_not_be_null"
+    },
+    {
+      "id": "9588335c-4acf-49ab-81af-d5cdab0ac7f3",
+      "kwargs": {
+        "column": "published",
+        "regex": "^\\d{4}-\\d{2}-\\d{2}$"
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_match_regex"
+    },
+    {
+      "id": "b493343a-d9ac-48ce-89cb-ed205919a2c5",
+      "kwargs": {
+        "column": "age_days",
+        "max_value": 180.0,
+        "min_value": 0.0
+      },
+      "meta": {},
+      "severity": "critical",
+      "type": "expect_column_values_to_be_between"
+    }
+  ],
+  "id": "7b694b61-4edc-41e0-b07a-6b2ce967c8e0",
+  "meta": {
+    "great_expectations_version": "1.19.1"
+  },
+  "name": "baseline-quality-suite",
+  "notes": null
+}
