@@ -85,13 +85,13 @@ fluent_datasources:
     type: pandas
     id: f4ff41b0-0ef3-4222-9a05-521535bfc75f
     assets:
-      baseline-quality:
+      repaired-quality:
         type: dataframe
-        id: d72199c0-e71b-4fbc-8a07-4dabdd52a9d0
+        id: c7c9c4f7-e1ae-4c10-8ecf-16cdfb8a9ea1
         batch_metadata: {}
         batch_definitions:
           batch:
-            id: ec420551-545c-4358-8a1f-368f5a6fac5c
+            id: d1d827ba-b55f-49ef-9372-80f6e0cda15e
             partitioner:
 analytics_enabled:
 data_context_id: 63291724-1da1-438e-937c-1d53c2142354

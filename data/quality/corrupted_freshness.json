@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-08-06T03:38:25.096194+00:00",
+  "threshold_days": 180,
+  "total_rows": 21,
+  "stale_rows": 3,
+  "fresh_rows": 18,
+  "latest_published": "2026-08-01",
+  "oldest_published": "2000-01-01",
+  "days_since_latest_publication": 5,
+  "max_age_days": 9714,
+  "mean_age_days": 1389.81,
+  "is_fresh": false,
+  "notes": "Fresh means every row is younger than 180 days."
+}

@@ -1,10 +1,10 @@
 {
-  "provider": "gemini",
+  "provider": "openrouter",
   "model": "gemini-2.5-flash",
   "questions": [
     "What is the paper 'SafeRAG: A Large-Language-Model-Based Multistage Retrieval-Augmented Framework for Oil and Gas Safety Report Generation' about?",
     "Who authored the paper 'SafeRAG: A Large-Language-Model-Based Multistage Retrieval-Augmented Framework for Oil and Gas Safety Report Generation'?"
   ],
   "status": "skipped",
-  "reason": "GOOGLE_API_KEY is required when LLM_PROVIDER=gemini."
+  "reason": "Error code: 402 - {'error': {'message': 'This request requires more credits, or fewer max_tokens. You requested up to 65535 tokens, but can only afford 8094. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account', 'code': 402, 'metadata': {'limit_source': 'openrouter_credits', 'remedy_hint': 'Add credits at https://openrouter.ai/settings/credits, or lower max_tokens / prompt size to fit your remaining balance.', 'provider_name': None, 'previous_errors': [{'code': 402, 'message': 'This request requires more credits, or fewer max_tokens. You requested up to 65535 tokens, but can only afford 8094. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account'}, {'code': 402, 'message': 'This request requires more credits, or fewer max_tokens. You requested up to 65535 tokens, but can only afford 8094. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account'}, {'code': 402, 'message': 'This request requires more credits, or fewer max_tokens. You requested up to 65535 tokens, but can only afford 8094. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account'}]}}, 'user_id': 'user_2x2Y8Sj0YQNVez0EHhH8M31Whru'}"
 }

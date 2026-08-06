@@ -1,6 +1,6 @@
 # Phase 1 - Baseline Report
 
-Generated at: 2026-08-06T03:18:22.237561+00:00
+Generated at: 2026-08-06T03:37:50.615268+00:00
 
 Baseline run of the RAG data pipeline on clean Crossref data: ingestion -> cleaning -> embedding index -> evaluation -> data quality and freshness monitoring.
 
@@ -22,12 +22,12 @@ Baseline run of the RAG data pipeline on clean Crossref data: ingestion -> clean
 | top_k | 4 |
 | test_set_source | cached |
 | test_set_size | 25 |
-| raw_response_artifact | data/raw/crossref_response.json |
-| raw_records_artifact | data/raw/crossref_records.json |
-| clean_artifacts | data/clean/papers_clean.csv, data/clean/papers_clean.json |
-| embeddings_artifact | data/embeddings/papers_embeddings.json |
-| test_set_artifact | data/eval/test_set.json |
-| metrics_artifact | data/results/baseline_metrics.json |
+| raw_response_artifact | data\raw\crossref_response.json |
+| raw_records_artifact | data\raw\crossref_records.json |
+| clean_artifacts | data\clean\papers_clean.csv, data\clean\papers_clean.json |
+| embeddings_artifact | data\embeddings\papers_embeddings.json |
+| test_set_artifact | data\eval\test_set.json |
+| metrics_artifact | data\results\baseline_metrics.json |
 
 ## 2. Evaluation metrics
 
@@ -35,9 +35,9 @@ Baseline run of the RAG data pipeline on clean Crossref data: ingestion -> clean
 | --- | --- |
 | Evaluation samples | 25 |
 | Retrieval hit rate | 1.000 |
-| Mean token F1 | 0.965 |
-| Judge accuracy | 0.960 |
-| Mean judge score (1-5) | 4.840 |
+| Mean token F1 | 0.834 |
+| Judge accuracy | 0.920 |
+| Mean judge score (1-5) | 4.120 |
 
 Ragas:
 
@@ -49,7 +49,7 @@ Ragas:
 
 Overall status: **PASS** (10/10 expectations passed)
 
-Engine: great_expectations 1.19.1 | rows checked: 24
+Engine: great_expectations 1.18.0 | rows checked: 24
 
 | Expectation | Column | Result | Unexpected | Observed |
 | --- | --- | --- | --- | --- |
@@ -70,7 +70,7 @@ Status: **FRESH** (threshold 180 days)
 
 | Field | Value |
 | --- | --- |
-| generated_at | 2026-08-06T03:18:22.235257+00:00 |
+| generated_at | 2026-08-06T03:37:50.611232+00:00 |
 | threshold_days | 180 |
 | total_rows | 24 |
 | stale_rows | 0 |

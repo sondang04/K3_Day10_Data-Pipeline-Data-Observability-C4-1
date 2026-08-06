@@ -1,27 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from datetime import date
-from html import unescape
-from pathlib import Path
+import json
 import re
 import time
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from urllib.parse import urlencode
 
 import requests
 
 from core.config import Settings
-from core.utils import compact_join, normalize_whitespace, read_json, write_json
-
-CROSSREF_API_URL = "https://api.crossref.org/works"
-USER_AGENT = "day10-data-observability-lab/0.1 (baseline RAG pipeline; mailto:student@example.com)"
-REQUEST_TIMEOUT_SECONDS = 30
-MAX_ATTEMPTS = 4
-BACKOFF_SECONDS = 2.0
-RETRY_STATUS_CODES = {429, 500, 502, 503, 504}
-MAX_API_ROWS = 100
-# Crossref items can be unusable (no title/abstract), so ask for more rows than needed
-# and keep the first `max_results` records that survive parsing.
-OVERFETCH_FACTOR = 2
 
 
 @dataclass(frozen=True)
@@ -39,188 +27,192 @@ class PaperRecord:
     comment: str
 
 
-def _strip_markup(value: str) -> str:
-    return normalize_whitespace(unescape(re.sub(r"<[^>]+>", " ", value)))
-
-
-def _first_text(values: list | None) -> str:
-    for value in values or []:
-        text = _strip_markup(str(value))
-        if text:
-            return text
-    return ""
-
-
-def _iso_date(node: dict | None) -> str:
-    date_parts = (node or {}).get("date-parts") or [[]]
-    parts = [part for part in date_parts[0] if isinstance(part, int)]
-    if not parts:
-        return ""
-    year = parts[0]
-    month = parts[1] if len(parts) > 1 else 1
-    day = parts[2] if len(parts) > 2 else 1
-    try:
-        return date(year, month, day).isoformat()
-    except ValueError:
-        return ""
-
-
-def _published_date(item: dict) -> str:
-    for key in ("published", "published-online", "published-print", "issued", "created"):
-        published = _iso_date(item.get(key))
-        if published:
-            return published
-    return ""
-
-
-def _updated_date(item: dict) -> str:
-    for key in ("deposited", "indexed", "created"):
-        updated = _iso_date(item.get(key))
-        if updated:
-            return updated
-    return ""
-
-
-def _authors(item: dict) -> list[str]:
-    names: list[str] = []
-    for author in item.get("author") or []:
-        given = _strip_markup(str(author.get("given", "")))
-        family = _strip_markup(str(author.get("family", "")))
-        name = normalize_whitespace(f"{given} {family}") or _strip_markup(str(author.get("name", "")))
-        if name:
-            names.append(name)
-    return names
-
-
-def _categories(item: dict) -> list[str]:
-    subjects = [_strip_markup(str(subject)) for subject in item.get("subject") or []]
-    subjects = [subject for subject in subjects if subject]
-    if subjects:
-        return subjects
-    # Most Crossref works carry no `subject`, so fall back to venue and work type.
-    fallback = [_first_text(item.get("container-title")), _strip_markup(str(item.get("type", "")))]
-    return [value for value in fallback if value]
-
-
-def _abstract(item: dict) -> str:
-    abstract = _strip_markup(str(item.get("abstract", "")))
-    # JATS abstracts usually open with a section label such as <jats:title>Abstract</jats:title>.
-    return re.sub(r"^(graphical\s+)?(abstract|summary)[:\s.-]*", "", abstract, flags=re.IGNORECASE).strip()
-
-
-def _pdf_url(item: dict) -> str:
-    links = item.get("link") or []
-    for link in links:
-        if str(link.get("content-type", "")).lower() == "application/pdf":
-            return str(link.get("URL", ""))
-    for link in links:
-        url = str(link.get("URL", ""))
-        if "pdf" in url.lower():
-            return url
-    return ""
-
-
-def _comment(item: dict) -> str:
-    return compact_join(
-        [
-            _strip_markup(str(item.get("type", ""))),
-            _first_text(item.get("container-title")),
-            _strip_markup(str(item.get("publisher", ""))),
-        ],
-        sep=" | ",
-    )
-
-
 def parse_crossref_payload(payload: dict) -> list[PaperRecord]:
-    items = ((payload or {}).get("message") or {}).get("items") or []
-    records: list[PaperRecord] = []
+    """Parse Crossref payload thanh list PaperRecord."""
+    records = []
+    items = payload.get("message", {}).get("items", [])
+    
     for item in items:
-        paper_id = normalize_whitespace(str(item.get("DOI", "")))
-        title = _first_text(item.get("title"))
-        summary = _abstract(item)
-        published = _published_date(item)
-        if not paper_id or not title or not summary or not published:
+        doi = item.get("DOI", "")
+        if not doi:
             continue
-
-        categories = _categories(item)
-        abs_url = normalize_whitespace(str(item.get("URL", ""))) or f"https://doi.org/{paper_id}"
-        records.append(
-            PaperRecord(
-                paper_id=paper_id,
-                title=title,
-                summary=summary,
-                authors=_authors(item),
-                categories=categories,
-                primary_category=categories[0] if categories else "",
-                published=published,
-                updated=_updated_date(item) or published,
-                abs_url=abs_url,
-                pdf_url=_pdf_url(item),
-                comment=_comment(item),
-            )
+        
+        titles = item.get("title", [])
+        title = titles[0] if titles else ""
+        if not title:
+            continue
+        
+        abstracts = item.get("abstract", "")
+        summary = _clean_html_tags(str(abstracts)) if abstracts else ""
+        
+        authors = []
+        for author in item.get("author", []):
+            given = author.get("given", "")
+            family = author.get("family", "")
+            full_name = f"{given} {family}".strip()
+            if full_name:
+                authors.append(full_name)
+        
+        categories = item.get("subject", [])
+        if not categories:
+            categories = item.get("categories", [])
+        
+        primary_category = categories[0] if categories else ""
+        
+        published_info = item.get("published-print", item.get("published-online", {}))
+        published_date = published_info.get("date-parts", [[]])
+        if published_date and published_date[0]:
+            parts = published_date[0]
+            if len(parts) >= 3:
+                published = f"{parts[0]}-{parts[1]:02d}-{parts[2]:02d}"
+            elif len(parts) == 2:
+                published = f"{parts[0]}-{parts[1]:02d}-01"
+            elif len(parts) == 1:
+                published = f"{parts[0]}-01-01"
+            else:
+                published = ""
+        else:
+            published = ""
+        
+        updated_date = item.get("updated", {}).get("date-parts", [[]])
+        if updated_date and updated_date[0]:
+            parts = updated_date[0]
+            if len(parts) >= 3:
+                updated = f"{parts[0]}-{parts[1]:02d}-{parts[2]:02d}"
+            elif len(parts) == 2:
+                updated = f"{parts[0]}-{parts[1]:02d}-01"
+            elif len(parts) == 1:
+                updated = f"{parts[0]}-01-01"
+            else:
+                updated = published
+        else:
+            updated = published
+        
+        url = item.get("URL", "")
+        abs_url = url if url else f"https://doi.org/{doi}"
+        
+        pdf_url = ""
+        links = item.get("link", [])
+        for link in links:
+            if link.get("content-type", "").startswith("application/pdf"):
+                pdf_url = link.get("URL", "")
+                break
+        
+        comment = item.get("comment", "")
+        
+        paper_id = doi.replace("/", "_").replace(".", "_")
+        
+        record = PaperRecord(
+            paper_id=paper_id,
+            title=title.strip(),
+            summary=summary.strip(),
+            authors=authors,
+            categories=categories if isinstance(categories, list) else [],
+            primary_category=primary_category,
+            published=published,
+            updated=updated,
+            abs_url=abs_url,
+            pdf_url=pdf_url,
+            comment=comment,
         )
+        records.append(record)
+    
     return records
 
 
-def _request_payload(params: dict) -> dict:
-    last_error: Exception | None = None
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        try:
-            response = requests.get(
-                CROSSREF_API_URL,
-                params=params,
-                headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
-                timeout=REQUEST_TIMEOUT_SECONDS,
-            )
-        except requests.RequestException as exc:
-            last_error = exc
-        else:
-            if response.status_code == 200:
-                return response.json()
-            if response.status_code not in RETRY_STATUS_CODES:
-                response.raise_for_status()
-            last_error = RuntimeError(f"Crossref returned HTTP {response.status_code}")
-
-        if attempt < MAX_ATTEMPTS:
-            time.sleep(BACKOFF_SECONDS * 2 ** (attempt - 1))
-
-    raise RuntimeError(f"Crossref request failed after {MAX_ATTEMPTS} attempts: {last_error}")
+def _clean_html_tags(text: str) -> str:
+    """Remove HTML tags from text."""
+    clean = re.sub(r'<[^>]+>', '', text)
+    clean = clean.replace('&nbsp;', ' ')
+    clean = clean.replace('&amp;', '&')
+    clean = clean.replace('&lt;', '<')
+    clean = clean.replace('&gt;', '>')
+    clean = clean.replace('&quot;', '"')
+    clean = re.sub(r'\s+', ' ', clean)
+    return clean.strip()
 
 
 def fetch_source_records(settings: Settings) -> list[PaperRecord]:
-    rows = min(settings.max_results * OVERFETCH_FACTOR, MAX_API_ROWS)
+    """Goi source API, luu raw response, parse thanh records."""
+    base_url = "https://api.crossref.org/works"
+    
     params = {
-        "query.bibliographic": settings.source_query,
+        "query": settings.source_query,
         "filter": settings.source_filter,
-        "rows": rows,
+        "rows": settings.max_results,
+        "mailto": "lab@example.com",
     }
-
-    payload = _request_payload(params)
-    write_json(settings.paths.raw_api_response, payload)
-
-    records = parse_crossref_payload(payload)[: settings.max_results]
-    write_json(settings.paths.raw_records_json, [asdict(record) for record in records])
+    
+    url = f"{base_url}?{urlencode(params)}"
+    
+    max_retries = 3
+    retry_delay = 5
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=30)
+            
+            if response.status_code == 429:
+                wait_time = int(response.headers.get("Retry-After", retry_delay))
+                print(f"Rate limited. Waiting {wait_time} seconds...")
+                time.sleep(wait_time)
+                continue
+            
+            if response.status_code == 503:
+                print(f"Service unavailable. Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                continue
+            
+            response.raise_for_status()
+            break
+            
+        except requests.exceptions.RequestException as e:
+            if attempt < max_retries - 1:
+                print(f"Request failed: {e}. Retrying...")
+                time.sleep(retry_delay)
+            else:
+                raise RuntimeError(f"Failed to fetch from Crossref after {max_retries} attempts") from e
+    
+    payload = response.json()
+    
+    settings.paths.raw_api_response.parent.mkdir(parents=True, exist_ok=True)
+    with open(settings.paths.raw_api_response, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    
+    records = parse_crossref_payload(payload)
+    
+    settings.paths.raw_records_json.parent.mkdir(parents=True, exist_ok=True)
+    records_dict = [asdict(r) for r in records]
+    with open(settings.paths.raw_records_json, "w", encoding="utf-8") as f:
+        json.dump(records_dict, f, ensure_ascii=False, indent=2)
+    
+    print(f"Fetched {len(records)} records from Crossref")
     return records
 
 
 def load_raw_records(path: Path) -> list[PaperRecord]:
-    payload = read_json(path)
-    records: list[PaperRecord] = []
-    for item in payload:
-        categories = [str(value) for value in item.get("categories") or []]
-        records.append(
-            PaperRecord(
-                paper_id=str(item.get("paper_id", "")),
-                title=str(item.get("title", "")),
-                summary=str(item.get("summary", "")),
-                authors=[str(value) for value in item.get("authors") or []],
-                categories=categories,
-                primary_category=str(item.get("primary_category", "")) or (categories[0] if categories else ""),
-                published=str(item.get("published", "")),
-                updated=str(item.get("updated", "")),
-                abs_url=str(item.get("abs_url", "")),
-                pdf_url=str(item.get("pdf_url", "")),
-                comment=str(item.get("comment", "")),
-            )
+    """Doc JSON snapshot va map thanh PaperRecord."""
+    if not path.exists():
+        raise FileNotFoundError(f"Raw records not found at {path}")
+    
+    with open(path, "r", encoding="utf-8") as f:
+        records_dict = json.load(f)
+    
+    records = []
+    for rd in records_dict:
+        record = PaperRecord(
+            paper_id=rd["paper_id"],
+            title=rd["title"],
+            summary=rd["summary"],
+            authors=rd["authors"],
+            categories=rd["categories"],
+            primary_category=rd["primary_category"],
+            published=rd["published"],
+            updated=rd["updated"],
+            abs_url=rd["abs_url"],
+            pdf_url=rd["pdf_url"],
+            comment=rd["comment"],
         )
+        records.append(record)
+    
     return records

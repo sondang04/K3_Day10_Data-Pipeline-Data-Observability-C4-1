@@ -1,0 +1,78 @@
+{
+  "corruption_log": [
+    {
+      "type": "drop_latest_records",
+      "count": 3,
+      "paper_ids": [
+        "10.7717/peerj-cs.3882",
+        "10.21079/11681/50309",
+        "10.1093/sleep/zsag091.0346"
+      ],
+      "description": "Dropped 3 latest records"
+    },
+    {
+      "type": "blank_summary",
+      "count": 3,
+      "indices": [
+        15,
+        18,
+        19
+      ],
+      "description": "Blanked summary in 3 records"
+    },
+    {
+      "type": "inject_noise",
+      "count": 3,
+      "indices": [
+        6,
+        0,
+        9
+      ],
+      "description": "Injected noise in 3 records"
+    },
+    {
+      "type": "truncate_title",
+      "count": 3,
+      "indices": [
+        19,
+        15,
+        2
+      ],
+      "description": "Truncated titles in 3 records"
+    },
+    {
+      "type": "stale_date",
+      "count": 3,
+      "indices": [
+        16,
+        9,
+        17
+      ],
+      "description": "Set old publication dates in 3 records"
+    },
+    {
+      "type": "duplicate_ids",
+      "count": 2,
+      "original_ids": [
+        "10.52060/juptik.v4i1.4318_dup_0",
+        "10.3390/app16052244_dup_1"
+      ],
+      "new_ids": [
+        "10.52060/juptik.v4i1.4318_dup_0",
+        "10.3390/app16052244_dup_1"
+      ],
+      "description": "Created duplicate IDs for 2 records"
+    }
+  ],
+  "initial_count": 24,
+  "final_count": 21,
+  "corrupted_count": 3,
+  "corruption_types": [
+    "drop_latest_records",
+    "blank_summary",
+    "inject_noise",
+    "truncate_title",
+    "stale_date",
+    "duplicate_ids"
+  ]
+}

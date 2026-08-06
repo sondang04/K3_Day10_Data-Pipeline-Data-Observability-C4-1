@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "4754caab-e272-46e7-aaa4-adc843beff83",
+      "name": "corrupted-quality"
+    },
+    "batch_definition": {
+      "id": "e73346a5-1366-4eb6-8940-912e9b08f1a7",
+      "name": "batch"
+    },
+    "datasource": {
+      "id": "f4ff41b0-0ef3-4222-9a05-521535bfc75f",
+      "name": "papers"
+    }
+  },
+  "id": "e0944e7f-e0cd-4dad-a513-561ea5da38a7",
+  "name": "corrupted-quality-validation",
+  "suite": {
+    "id": "e965ac4b-f459-47eb-9d25-5e9d248f5080",
+    "name": "corrupted-quality-suite"
+  }
+}

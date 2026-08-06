@@ -1,0 +1,22 @@
+{
+  "data": {
+    "asset": {
+      "id": "c7c9c4f7-e1ae-4c10-8ecf-16cdfb8a9ea1",
+      "name": "repaired-quality"
+    },
+    "batch_definition": {
+      "id": "d1d827ba-b55f-49ef-9372-80f6e0cda15e",
+      "name": "batch"
+    },
+    "datasource": {
+      "id": "f4ff41b0-0ef3-4222-9a05-521535bfc75f",
+      "name": "papers"
+    }
+  },
+  "id": "cf3f33e6-b4a2-4856-8ab6-4cbc38a14d78",
+  "name": "repaired-quality-validation",
+  "suite": {
+    "id": "b249f771-e7ae-4f9e-be21-b38f717aa44e",
+    "name": "repaired-quality-suite"
+  }
+}

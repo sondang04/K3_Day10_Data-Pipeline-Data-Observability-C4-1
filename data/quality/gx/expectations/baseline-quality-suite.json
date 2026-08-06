@@ -1,7 +1,7 @@
 {
   "expectations": [
     {
-      "id": "6ea23399-6110-487e-b27c-4a693f4a7672",
+      "id": "f53ac9b9-1614-43ed-bbf1-a9f78c9bc2a0",
       "kwargs": {
         "min_value": 10
       },
@@ -10,7 +10,7 @@
       "type": "expect_table_row_count_to_be_between"
     },
     {
-      "id": "83da8d28-aa8e-4471-a8d8-579143effed2",
+      "id": "e684d997-276f-4f8e-bd6c-7707cac3188c",
       "kwargs": {
         "column": "paper_id"
       },
@@ -19,7 +19,7 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "865edea7-32ab-4d14-89db-1a39491d0c7e",
+      "id": "78cf5306-710b-4c45-a285-0ea1ec32c412",
       "kwargs": {
         "column": "paper_id"
       },
@@ -28,7 +28,7 @@
       "type": "expect_column_values_to_be_unique"
     },
     {
-      "id": "4b8204ee-5db1-4058-b479-5e8804e84e36",
+      "id": "2c367e0d-fd82-40af-8aca-75c573ad5de0",
       "kwargs": {
         "column": "title"
       },
@@ -37,17 +37,17 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "94a5482a-dfaf-487c-84c2-082edc019bb9",
+      "id": "7c4dc580-b36f-47d8-b806-de1745c29846",
       "kwargs": {
         "column": "title",
-        "min_value": 12
+        "min_value": 5
       },
       "meta": {},
       "severity": "critical",
       "type": "expect_column_value_lengths_to_be_between"
     },
     {
-      "id": "66ca4f59-f158-463b-a4e7-80c088661206",
+      "id": "73365814-0f28-468e-8a3c-c59bf07560cb",
       "kwargs": {
         "column": "summary"
       },
@@ -56,17 +56,17 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "87344a6d-f429-4e75-ba63-11732f740838",
+      "id": "2755dee6-eca2-4e52-8ef3-651fb19426fe",
       "kwargs": {
         "column": "summary",
-        "min_value": 80
+        "min_value": 50
       },
       "meta": {},
       "severity": "critical",
       "type": "expect_column_value_lengths_to_be_between"
     },
     {
-      "id": "faa69316-4be3-4f3a-8288-e305d83cb70f",
+      "id": "1cc73c43-b6ac-41e1-88b7-6c2d5a13c4b5",
       "kwargs": {
         "column": "text_for_embedding"
       },
@@ -75,7 +75,7 @@
       "type": "expect_column_values_to_not_be_null"
     },
     {
-      "id": "9588335c-4acf-49ab-81af-d5cdab0ac7f3",
+      "id": "fe96c113-40e9-4ca9-80df-bfbfd2408282",
       "kwargs": {
         "column": "published",
         "regex": "^\\d{4}-\\d{2}-\\d{2}$"
@@ -85,7 +85,7 @@
       "type": "expect_column_values_to_match_regex"
     },
     {
-      "id": "b493343a-d9ac-48ce-89cb-ed205919a2c5",
+      "id": "ec3493f5-a5ef-49c8-b01d-7b96bb3e0f20",
       "kwargs": {
         "column": "age_days",
         "max_value": 180.0,
@@ -98,7 +98,7 @@
   ],
   "id": "7b694b61-4edc-41e0-b07a-6b2ce967c8e0",
   "meta": {
-    "great_expectations_version": "1.19.1"
+    "great_expectations_version": "1.18.0"
   },
   "name": "baseline-quality-suite",
   "notes": null

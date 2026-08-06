@@ -1,7 +1,7 @@
 {
   "report_name": "baseline_quality",
-  "generated_at": "2026-08-06T03:18:22.235005+00:00",
-  "engine": "great_expectations 1.19.1",
+  "generated_at": "2026-08-06T03:37:50.610312+00:00",
+  "engine": "great_expectations 1.18.0",
   "row_count": 24,
   "column_count": 16,
   "success": true,
@@ -124,5 +124,5 @@
       "error": null
     }
   ],
-  "report_path": "data/quality/baseline-quality.json"
+  "report_path": "data\\quality\\baseline-quality.json"
 }

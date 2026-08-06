@@ -1,0 +1,77 @@
+{
+  "baseline_metrics": {
+    "samples": 25,
+    "retrieval_hit_rate": 1.0,
+    "mean_token_f1": 0.8338571428571429,
+    "judge_accuracy": 0.92,
+    "mean_judge_score": 4.12,
+    "ragas": {
+      "skipped": "Set RUN_RAGAS=1 to enable the slower Ragas pass."
+    }
+  },
+  "corrupted_metrics": {
+    "samples": 25,
+    "retrieval_hit_rate": 0.8,
+    "mean_token_f1": 0.6993174603174603,
+    "judge_accuracy": 0.72,
+    "mean_judge_score": 3.48,
+    "ragas": {
+      "skipped": "Set RUN_RAGAS=1 to enable the slower Ragas pass."
+    }
+  },
+  "repaired_metrics": {
+    "samples": 25,
+    "retrieval_hit_rate": 1.0,
+    "mean_token_f1": 0.8258571428571428,
+    "judge_accuracy": 0.92,
+    "mean_judge_score": 4.12,
+    "ragas": {
+      "skipped": "Set RUN_RAGAS=1 to enable the slower Ragas pass."
+    }
+  },
+  "delta": {
+    "retrieval_hit_rate": {
+      "baseline": 1.0,
+      "corrupted": 0.8,
+      "repaired": 1.0,
+      "corrupted_delta": -0.19999999999999996,
+      "repaired_delta": 0.0
+    },
+    "mean_token_f1": {
+      "baseline": 0.8338571428571429,
+      "corrupted": 0.6993174603174603,
+      "repaired": 0.8258571428571428,
+      "corrupted_delta": -0.13453968253968251,
+      "repaired_delta": -0.008000000000000007
+    },
+    "judge_accuracy": {
+      "baseline": 0.92,
+      "corrupted": 0.72,
+      "repaired": 0.92,
+      "corrupted_delta": -0.20000000000000007,
+      "repaired_delta": 0.0
+    },
+    "mean_judge_score": {
+      "baseline": 4.12,
+      "corrupted": 3.48,
+      "repaired": 4.12,
+      "corrupted_delta": -0.6400000000000001,
+      "repaired_delta": 0.0
+    }
+  },
+  "record_counts": {
+    "baseline": 24,
+    "corrupted": 21,
+    "repaired": 24
+  },
+  "quality_status": {
+    "baseline": "passed",
+    "corrupted": "failed",
+    "repaired": "passed"
+  },
+  "freshness_status": {
+    "baseline": "fresh",
+    "corrupted": "stale",
+    "repaired": "fresh"
+  }
+}
